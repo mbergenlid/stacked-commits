@@ -113,7 +113,7 @@ impl GitRepo {
 
     pub fn find_head_of_remote_branch(&self, branch_name: &str) -> Option<Commit> {
         self.repo
-            .find_branch(&format!("origin/{}", branch_name), git2::BranchType::Remote)
+            .find_branch(&format!("origin/{branch_name}"), git2::BranchType::Remote)
             .ok()
             .and_then(|b| b.get().peel_to_commit().ok())
     }
@@ -122,7 +122,7 @@ impl GitRepo {
         let (obj, _) = self
             .repo
             .revparse_ext(commit_ref)
-            .with_context(|| format!("Bad revision '{}'", commit_ref))?;
+            .with_context(|| format!("Bad revision '{commit_ref}'"))?;
         let commit = obj.peel_to_commit()?;
         if !self
             .repo
@@ -153,7 +153,7 @@ impl GitRepo {
             &committer,
             None,
             commit.id(),
-            &format!("{}", meta_data),
+            &format!("{meta_data}"),
             true,
         )?;
         std::result::Result::Ok(())

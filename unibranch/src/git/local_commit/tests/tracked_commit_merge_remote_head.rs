@@ -54,7 +54,7 @@ fn should_not_merge_if_remote_commit_is_descendant_of_local() {
         +Some fixes
     "};
     local.assert_diff(
-        &format!("{}^", rev_str),
+        &format!("{rev_str}^"),
         &rev_str.to_string(),
         expected_diff,
     );

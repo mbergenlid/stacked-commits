@@ -126,7 +126,7 @@ impl<'repo> TrackedCommit<'repo> {
             None,
         )?;
 
-        println!("Main patch files: {:?}", files_in_main_patch);
+        println!("Main patch files: {files_in_main_patch:?}");
 
         let new_commit = self.split_and_apply_patch(remote_commit, &patch, |delta| {
             if let Some(delta) = delta {
@@ -452,6 +452,37 @@ impl<'repo> TrackedCommit<'repo> {
         )?;
 
         Ok(oid)
+    }
+
+    pub(crate) fn commit_staged(self) -> anyhow::Result<TrackedCommit<'repo>> {
+        let mut index = self.repo.index()?;
+        let parent = self.repo.find_commit(self.meta_data.remote_commit)?;
+
+        if let Some(commit) = self.commit_index(&mut index, &parent, "Fixup!")? {
+            dbg!(&self.meta_data.remote_branch_name);
+            self.repo.branch(
+                &format!("origin/{}", &self.meta_data.remote_branch_name),
+                &commit,
+                true,
+            )?;
+
+            let base_commit = self.git_repo.base_commit()?;
+            let diff = self.repo.diff_tree_to_tree(
+                Some(&base_commit.tree()?),
+                Some(&commit.tree()?),
+                None,
+            )?;
+            let parent = self.commit.parent(0)?;
+            let mut new_index = self.repo.apply_to_tree(&parent.tree()?, &diff, None)?;
+
+            if let Some(new_main_commit) =
+                self.commit_index(&mut new_index, &parent, self.commit.message().expect(""))?
+            {
+                self.git_repo.update_current_branch(&new_main_commit)?;
+            }
+        }
+
+        Ok(self)
     }
 
     pub(crate) fn untrack(self) -> anyhow::Result<UnTrackedCommit<'repo>> {

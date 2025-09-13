@@ -27,7 +27,7 @@ fn test_update_a_diff() {
 
     let commit = repo.find_commit(0).id();
     create::execute(
-        create::Options::default().with_commit_ref(format!("{}", commit)),
+        create::Options::default().with_commit_ref(format!("{commit}")),
         git_repo(&repo),
     )
     .unwrap();
@@ -113,7 +113,7 @@ fn test_a_more_complex_update() {
 
     let commit = repo.find_commit(0).id();
     create::execute(
-        create::Options::default().with_commit_ref(format!("{}", commit)),
+        create::Options::default().with_commit_ref(format!("{commit}")),
         git_repo(&repo),
     )
     .unwrap();
@@ -198,7 +198,7 @@ fn test_update_a_commit_and_modify_the_commit_message() {
 
     let head = repo.find_commit(0).id();
     create::execute(
-        create::Options::default().with_commit_ref(format!("{}", head)),
+        create::Options::default().with_commit_ref(format!("{head}")),
         git_repo(&repo),
     )
     .unwrap();

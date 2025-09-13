@@ -52,7 +52,7 @@ impl Visitor<'_> for OidVisitor {
     {
         Ok(Oid(v
             .parse()
-            .map_err(|_| E::custom(format!("Invalid OID: '{}'", v)))?))
+            .map_err(|_| E::custom(format!("Invalid OID: '{v}'")))?))
     }
 
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -67,21 +67,21 @@ mod test {
     #[test]
     fn test_deserialize() {
         let oid_as_string = "52a4d284cd73150a5c62e5e546381db82182032c";
-        let deserialized: Oid = serde_json::from_str(&format!(r#""{}""#, oid_as_string)).unwrap();
+        let deserialized: Oid = serde_json::from_str(&format!(r#""{oid_as_string}""#)).unwrap();
         assert_eq!(deserialized, Oid(oid_as_string.parse().unwrap()));
     }
 
     #[test]
     fn test_deserialize_invalid_oid() {
         let oid_as_string = "Invalid";
-        let deserialized: Result<Oid, _> = serde_json::from_str(&format!(r#""{}""#, oid_as_string));
+        let deserialized: Result<Oid, _> = serde_json::from_str(&format!(r#""{oid_as_string}""#));
         assert!(deserialized.is_err());
     }
 
     #[test]
     fn test_deserialize_invalid_json() {
         let oid_as_string = "52a4d284cd73150a5c62e5e546381db82182032c";
-        let deserialized: Result<Oid, _> = serde_json::from_str(&oid_as_string.to_string());
+        let deserialized: Result<Oid, _> = serde_json::from_str(oid_as_string);
         assert!(deserialized.is_err());
     }
 
@@ -89,6 +89,6 @@ mod test {
     fn test_serialize() {
         let oid_as_string = "52a4d284cd73150a5c62e5e546381db82182032c";
         let serialized = serde_json::to_string(&Oid(oid_as_string.parse().unwrap())).unwrap();
-        assert_eq!(serialized, format!(r#""{}""#, oid_as_string));
+        assert_eq!(serialized, format!(r#""{oid_as_string}""#));
     }
 }

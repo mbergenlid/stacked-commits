@@ -72,7 +72,7 @@ fn find_commit_from_commit() {
     );
     let short_hash = &format!("{}", test_repo.find_commit(1).id())[0..6];
     assert_eq!(
-        repo.find_unpushed_commit(&format!("{}^", short_hash))
+        repo.find_unpushed_commit(&format!("{short_hash}^"))
             .unwrap()
             .id(),
         test_repo.find_commit(2).id()

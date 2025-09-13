@@ -8,7 +8,7 @@ use pretty_assertions::assert_eq;
 fn create_options(commit_ref: Option<Oid>) -> create::Options {
     let options = create::Options::default();
     if let Some(commit_ref) = commit_ref {
-        options.with_commit_ref(format!("{}", commit_ref))
+        options.with_commit_ref(format!("{commit_ref}"))
     } else {
         options
     }

@@ -3,7 +3,7 @@ use clap::{command, Parser, Subcommand};
 use tracing::level_filters::LevelFilter;
 use tracing_subscriber::EnvFilter;
 use ubr::{
-    commands::{create, push, sync},
+    commands::{commit, create, push, sync},
     git::{CommandOption, GitRepo},
 };
 
@@ -28,6 +28,7 @@ enum Commands {
     Create(create::Options),
     Sync(sync::Options),
     Push,
+    Amend(commit::Options),
 }
 
 fn main() -> anyhow::Result<()> {
@@ -65,6 +66,7 @@ fn main() -> anyhow::Result<()> {
         Commands::Create(config) => create::execute(config, git_repo)?,
         Commands::Sync(config) => sync::execute(config, git_repo)?,
         Commands::Push => push::execute(".")?,
+        Commands::Amend(config) => commit::execute(config, git_repo)?,
     };
     Ok(())
 }
