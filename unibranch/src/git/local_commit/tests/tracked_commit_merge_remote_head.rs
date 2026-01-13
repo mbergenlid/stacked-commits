@@ -53,11 +53,7 @@ fn should_not_merge_if_remote_commit_is_descendant_of_local() {
         +another file
         +Some fixes
     "};
-    local.assert_diff(
-        &format!("{rev_str}^"),
-        &rev_str.to_string(),
-        expected_diff,
-    );
+    local.assert_diff(&format!("{rev_str}^"), &rev_str.to_string(), expected_diff);
 
     local.assert_tracked_commit_in_sync(
         tracked_commit.as_commit().id(),

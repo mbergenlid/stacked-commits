@@ -130,7 +130,7 @@ impl TestRepoWithRemote<'_> {
     {
         let file_path = (*self.local_repo_dir).as_ref().join(path);
         let mut tmp_file = File::create(file_path).unwrap();
-        writeln!(tmp_file, "{content}").unwrap();
+        writeln!(tmp_file, "{}", content).unwrap();
         self
     }
 
@@ -141,7 +141,7 @@ impl TestRepoWithRemote<'_> {
     {
         let file_path = (*self.local_repo_dir).as_ref().join(path);
         let mut tmp_file = OpenOptions::new().append(true).open(file_path).unwrap();
-        writeln!(tmp_file, "{content}").unwrap();
+        writeln!(tmp_file, "{}", content).unwrap();
         self
     }
 
@@ -253,7 +253,7 @@ impl TestRepoWithRemote<'_> {
             .current_dir(current_dir)
             .arg("commit")
             .arg("-a")
-            .arg(format!("--fixup={fixup_commit}"))
+            .arg(format!("--fixup={}", fixup_commit))
             .stdout(Stdio::null())
             .stderr(Stdio::null())
             .status()
@@ -373,7 +373,7 @@ impl TestRepoWithRemote<'_> {
                 .stdout,
         )
         .expect("git show is not valid UTF-8");
-        println!("{out}");
+        println!("{}", out);
     }
 
     #[allow(dead_code)]
@@ -388,7 +388,7 @@ impl TestRepoWithRemote<'_> {
                 .stdout,
         )
         .expect("git log is not valid UTF-8");
-        println!("{out}");
+        println!("{}", out);
     }
 
     #[allow(dead_code)]
@@ -469,11 +469,11 @@ impl TestRepoWithRemote<'_> {
     }
 
     pub fn assert_tracked_commit_in_sync(&self, tracked_commit_id: Oid, remote_head: Oid) {
-        let rev1 = &format!("{tracked_commit_id}^");
-        let rev2 = &format!("{tracked_commit_id}");
+        let rev1 = &format!("{}^", tracked_commit_id);
+        let rev2 = &format!("{}", tracked_commit_id);
         let main_diff = String::from_utf8(self.diff(rev1, rev2).stdout).unwrap();
 
-        self.assert_diff("origin/master", &format!("{remote_head}"), &main_diff);
+        self.assert_diff("origin/master", &format!("{}", remote_head), &main_diff);
     }
 
     pub fn assert_workdir_is_clean(&self) {
