@@ -9,14 +9,14 @@ mod tracked_commit_sync_with_main;
 mod tracked_commit_update_local_branch_head;
 mod untracked_commit_rebase;
 
-fn tracked(commit: MainCommit) -> TrackedCommit {
+fn tracked(commit: MainCommit<'_>) -> TrackedCommit<'_> {
     match commit {
         MainCommit::UnTracked(_) => panic!("not a TrackedCommit"),
         MainCommit::Tracked(tracked) => tracked,
     }
 }
 
-fn setup_repo(remote: &RemoteRepo) -> TestRepoWithRemote {
+fn setup_repo(remote: &RemoteRepo) -> TestRepoWithRemote<'_> {
     let local = remote.clone_repo();
 
     let local = local

@@ -2,7 +2,7 @@ use pretty_assertions::assert_eq;
 use test_repo::{RemoteRepo, TestRepoWithRemote};
 use ubr::git::GitRepo;
 
-fn init_repo(remote: &RemoteRepo) -> TestRepoWithRemote {
+fn init_repo(remote: &RemoteRepo) -> TestRepoWithRemote<'_> {
     let test_repo = remote.clone_repo();
 
     let test_repo = test_repo

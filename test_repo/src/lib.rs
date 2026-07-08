@@ -27,12 +27,12 @@ impl RemoteRepo {
         RemoteRepo { dir: Box::new(dir) }
     }
 
-    pub fn clone_repo(&self) -> TestRepoWithRemote {
+    pub fn clone_repo(&self) -> TestRepoWithRemote<'_> {
         let local_repo_dir = tempdir().unwrap();
         self.clone_repo_into(local_repo_dir)
     }
 
-    pub fn clone_repo_into<P>(&self, dir: P) -> TestRepoWithRemote
+    pub fn clone_repo_into<P>(&self, dir: P) -> TestRepoWithRemote<'_>
     where
         P: AsRef<Path> + 'static,
     {
@@ -405,7 +405,7 @@ impl TestRepoWithRemote<'_> {
         String::from_utf8(out.stdout).expect("Output is not valid UTF-8")
     }
 
-    pub fn find_commit(&self, ancestors: u32) -> Commit {
+    pub fn find_commit(&self, ancestors: u32) -> Commit<'_> {
         let head = self.local_repo.head().unwrap();
 
         let mut commit = head.peel_to_commit().unwrap();
@@ -418,7 +418,7 @@ impl TestRepoWithRemote<'_> {
     }
 
     #[allow(dead_code)]
-    pub fn find_commit_by_reference(&self, reference: &str) -> Commit {
+    pub fn find_commit_by_reference(&self, reference: &str) -> Commit<'_> {
         self.local_repo
             .find_reference(reference)
             .unwrap()

@@ -1,8 +1,8 @@
 use std::path::PathBuf;
 
-use clap::{command, Parser, Subcommand};
+use clap::{Parser, Subcommand};
 use repo_generator::{
-    local_commit_changed, rebase_with_conflict, rebased_local_commit_changed,
+    local_changes_staged, local_commit_changed, rebase_with_conflict, rebased_local_commit_changed,
     rebased_local_commit_unchanged, remote_branch_changed_local_unchanged,
 };
 
@@ -26,6 +26,7 @@ enum Commands {
     RemoteBranchChangedLocalUnchanged,
     RebasedLocalCommitChanged,
     RebaseWithConflict,
+    LocalChangeStaged,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -76,6 +77,9 @@ fn main() -> anyhow::Result<()> {
             rebased_local_commit_changed::init_repo(&remote_repo, local_repo);
         }
         Commands::RebaseWithConflict => rebase_with_conflict::init_repo(&remote_repo, local_repo),
+        Commands::LocalChangeStaged => {
+            local_changes_staged::init_repo(local_repo);
+        }
     };
     Ok(())
 }

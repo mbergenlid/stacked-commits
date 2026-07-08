@@ -21,7 +21,7 @@ impl<'repo> UnTrackedCommit<'repo> {
             commit,
         }
     }
-    pub fn as_commit(&self) -> &Commit {
+    pub fn as_commit(&self) -> &Commit<'_> {
         &self.commit
     }
 

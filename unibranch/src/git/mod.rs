@@ -93,7 +93,7 @@ impl GitRepo {
         })
     }
 
-    pub fn remote(&self) -> RemoteGitCommand {
+    pub fn remote(&self) -> RemoteGitCommand<'_> {
         match self.git_command_option {
             CommandOption::Default => RemoteGitCommand::Default(&self.path),
             CommandOption::Silent => RemoteGitCommand::Silent(&self.path),
@@ -101,24 +101,24 @@ impl GitRepo {
         }
     }
 
-    pub fn base_commit(&self) -> anyhow::Result<Commit> {
+    pub fn base_commit(&self) -> anyhow::Result<Commit<'_>> {
         let remote_ref = format!("refs/remotes/origin/{}", self.current_branch_name);
         let base_commit_id = self.repo.refname_to_id(&remote_ref)?;
         Ok(self.repo.find_commit(base_commit_id)?)
     }
 
-    pub fn head(&self) -> anyhow::Result<Commit> {
+    pub fn head(&self) -> anyhow::Result<Commit<'_>> {
         Ok(self.repo.head()?.peel_to_commit()?)
     }
 
-    pub fn find_head_of_remote_branch(&self, branch_name: &str) -> Option<Commit> {
+    pub fn find_head_of_remote_branch(&self, branch_name: &str) -> Option<Commit<'_>> {
         self.repo
             .find_branch(&format!("origin/{branch_name}"), git2::BranchType::Remote)
             .ok()
             .and_then(|b| b.get().peel_to_commit().ok())
     }
 
-    pub fn find_unpushed_commit(&self, commit_ref: &str) -> anyhow::Result<MainCommit> {
+    pub fn find_unpushed_commit(&self, commit_ref: &str) -> anyhow::Result<MainCommit<'_>> {
         let (obj, _) = self
             .repo
             .revparse_ext(commit_ref)
@@ -135,6 +135,10 @@ impl GitRepo {
         }
 
         Ok(MainCommit::new(self, &self.repo, commit)?)
+    }
+
+    pub fn rebase(&self) -> Result<(), git2::Error> {
+        todo!()
     }
 
     pub fn save_meta_data(
@@ -193,7 +197,7 @@ impl GitRepo {
         Ok(())
     }
 
-    pub fn unpushed_commits(&self) -> anyhow::Result<Vec<MainCommit>> {
+    pub fn unpushed_commits(&self) -> anyhow::Result<Vec<MainCommit<'_>>> {
         let mut walk = self.repo.revwalk()?;
         walk.set_sorting(git2::Sort::TOPOLOGICAL.union(git2::Sort::REVERSE))?;
 
@@ -243,7 +247,7 @@ impl GitRepo {
         Ok(())
     }
 
-    pub(crate) fn finish_merge(&self) -> anyhow::Result<TrackedCommit> {
+    pub(crate) fn finish_merge(&self) -> anyhow::Result<TrackedCommit<'_>> {
         let state = self.sync_state.as_ref().expect("Must have a sync state");
         let tree = self.repo.index()?.write_tree()?;
         let tree = self.repo.find_tree(tree)?;

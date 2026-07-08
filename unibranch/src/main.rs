@@ -1,5 +1,5 @@
 use anyhow::Context;
-use clap::{command, Parser, Subcommand};
+use clap::{Parser, Subcommand};
 use tracing::level_filters::LevelFilter;
 use tracing_subscriber::EnvFilter;
 use ubr::{

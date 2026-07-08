@@ -40,7 +40,7 @@ impl<'repo> TrackedCommit<'repo> {
         }
     }
 
-    pub fn remote_branch(&self) -> anyhow::Result<Branch> {
+    pub fn remote_branch(&self) -> anyhow::Result<Branch<'_>> {
         let remote_branch = self
             .repo
             .find_branch(
@@ -51,12 +51,12 @@ impl<'repo> TrackedCommit<'repo> {
         Ok(remote_branch)
     }
 
-    pub fn local_branch_head(&self) -> anyhow::Result<Commit> {
+    pub fn local_branch_head(&self) -> anyhow::Result<Commit<'_>> {
         let commit_meta_data = &self.meta_data;
         Ok(self.repo.find_commit(commit_meta_data.remote_commit)?)
     }
 
-    pub fn as_commit(&self) -> &Commit {
+    pub fn as_commit(&self) -> &Commit<'_> {
         &self.commit
     }
 
@@ -64,8 +64,35 @@ impl<'repo> TrackedCommit<'repo> {
         self.commit
     }
 
-    pub fn meta_data(&self) -> &CommitMetadata {
+    pub fn meta_data(&self) -> &CommitMetadata<'_> {
         &self.meta_data
+    }
+
+    pub(crate) fn rebase(self, parent_commit: &Commit<'_>) -> anyhow::Result<Self> {
+        let mut index = self
+            .repo
+            .cherrypick_commit(self.as_commit(), parent_commit, 0, None)?;
+        let new_commit = {
+            let signature = self.as_commit().author();
+            let tree_id = index.write_tree_to(self.repo)?;
+            let tree = self.repo.find_tree(tree_id)?;
+            let new_commit_id = self.repo.commit(
+                None,
+                &signature,
+                &signature,
+                self.commit.message().expect("Not valid UTF-8 message"),
+                &tree,
+                &[parent_commit],
+            )?;
+            self.repo.find_commit(new_commit_id)?
+        };
+
+        Ok(TrackedCommit {
+            repo: self.repo,
+            git_repo: self.git_repo,
+            commit: new_commit,
+            meta_data: self.meta_data,
+        })
     }
 
     //
@@ -455,34 +482,61 @@ impl<'repo> TrackedCommit<'repo> {
     }
 
     pub(crate) fn commit_staged(self) -> anyhow::Result<TrackedCommit<'repo>> {
-        let mut index = self.repo.index()?;
-        let parent = self.repo.find_commit(self.meta_data.remote_commit)?;
+        let staged = self.repo.index()?;
+        let head = self.repo.head()?.peel_to_tree()?;
+        let diff = self
+            .repo
+            .diff_tree_to_index(Some(&head), Some(&staged), None)?;
 
-        if let Some(commit) = self.commit_index(&mut index, &parent, "Fixup!")? {
-            dbg!(&self.meta_data.remote_branch_name);
+        let parent = self.repo.find_commit(self.meta_data.remote_commit)?;
+        let mut index = self.repo.apply_to_tree(&parent.tree()?, &diff, None)?;
+
+        let (diff, new_remote_commit_id) = {
+            let Some(new_remote_commit) = self.commit_index(&mut index, &parent, "Fixup!\n")?
+            else {
+                return Ok(self);
+            };
+            let new_remote_commit_id = new_remote_commit.id();
+
+            // Update remote branch HEAD
             self.repo.branch(
                 &format!("origin/{}", &self.meta_data.remote_branch_name),
-                &commit,
+                &new_remote_commit,
                 true,
             )?;
 
             let base_commit = self.git_repo.base_commit()?;
             let diff = self.repo.diff_tree_to_tree(
                 Some(&base_commit.tree()?),
-                Some(&commit.tree()?),
+                Some(&new_remote_commit.tree()?),
                 None,
             )?;
-            let parent = self.commit.parent(0)?;
-            let mut new_index = self.repo.apply_to_tree(&parent.tree()?, &diff, None)?;
+            (diff, new_remote_commit_id)
+        };
 
-            if let Some(new_main_commit) =
-                self.commit_index(&mut new_index, &parent, self.commit.message().expect(""))?
-            {
-                self.git_repo.update_current_branch(&new_main_commit)?;
-            }
-        }
+        let parent = self.commit.parent(0)?;
+        let mut new_index = self.repo.apply_to_tree(&parent.tree()?, &diff, None)?;
 
-        Ok(self)
+        let Some(new_main_commit) =
+            self.commit_index(&mut new_index, &parent, self.commit.message().expect(""))?
+        else {
+            return Ok(self);
+        };
+
+        let new_main_commit_id = new_main_commit.id();
+        drop(new_main_commit);
+
+        let new_meta = self.meta_data.update_commit(new_remote_commit_id);
+
+        let new_main_commit = self.repo.find_commit(new_main_commit_id)?;
+        self.git_repo.save_meta_data(&new_main_commit, &new_meta)?;
+
+        Ok(TrackedCommit {
+            repo: self.repo,
+            git_repo: self.git_repo,
+            commit: new_main_commit,
+            meta_data: new_meta,
+        })
     }
 
     pub(crate) fn untrack(self) -> anyhow::Result<UnTrackedCommit<'repo>> {

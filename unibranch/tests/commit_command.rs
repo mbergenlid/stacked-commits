@@ -31,7 +31,7 @@ fn we_can_amend_head_commit() {
     // Stage some more changes
     let repo = repo.append_file("File2", "Hello again!").add_all();
 
-    commit::execute(commit::Options, git_repo(&repo)).unwrap();
+    commit::execute(commit::Options::default(), git_repo(&repo)).unwrap();
 
     repo.assert_diff(
         "origin/commit2",
